@@ -5,4 +5,5 @@ branches:
 projects:
   VanillaInventory:
     path: ""
+    icon: "/assets/icon.png"
 ...
