@@ -2,6 +2,7 @@
 name: VanillaInventory
 version: 1.0.0
 main: korado531m7\VanillaInventory\Main
-api: 3.17.2
+api: 3.17.0
+mcpe-protocol: 422
 deescription: Enable to use enchantment and anvil GUI
 ...
