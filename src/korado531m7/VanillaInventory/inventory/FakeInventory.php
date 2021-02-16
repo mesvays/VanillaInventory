@@ -14,6 +14,7 @@ namespace korado531m7\VanillaInventory\inventory;
 
 use korado531m7\VanillaInventory\DataManager;
 use pocketmine\event\inventory\InventoryTransactionEvent;
+use pocketmine\event\player\PlayerDropItemEvent;
 use pocketmine\inventory\ContainerInventory;
 use pocketmine\inventory\transaction\action\SlotChangeAction;
 use pocketmine\inventory\transaction\InventoryTransaction;
@@ -45,16 +46,29 @@ abstract class FakeInventory extends ContainerInventory{
         $tmp = DataManager::getTemporarilyInventory($who);
         if($tmp instanceof $this){
             foreach($packet->actions as $action){
-                if($action->sourceType === NetworkInventoryAction::SOURCE_CONTAINER){
-                    $adjustedSlot = $action->inventorySlot - $this->getFirstVirtualSlot();
-                    $ev = new InventoryTransactionEvent(new InventoryTransaction($who, [new SlotChangeAction($tmp, $adjustedSlot, $action->oldItem, $action->newItem)]));
-                    $ev->call();
+                switch($action->sourceType){
+                    case NetworkInventoryAction::SOURCE_WORLD:
+                        if($action->windowId === null){
+                            $ev = new PlayerDropItemEvent($who, $action->newItem);
+                            $ev->call();
+                            if($ev->isCancelled()){
+                                $tmp->setItem($action->inventorySlot, $action->newItem);
+                            }else{
+                                $who->getLevelNonNull()->dropItem($who, $action->newItem);
+                            }
+                        }
+                        break;
 
-                    if($action->windowId === ContainerIds::UI && in_array($action->inventorySlot, $this->getVirtualSlots(), true)){
-                        $tmp->setItem($adjustedSlot, $ev->isCancelled() ? $action->oldItem : $action->newItem);
-                    }else{
-                        $who->getWindow($action->windowId)->setItem($action->inventorySlot, $ev->isCancelled() ? $action->oldItem : $action->newItem);
-                    }
+                    case NetworkInventoryAction::SOURCE_CONTAINER:
+                        $adjustedSlot = $action->inventorySlot - $this->getFirstVirtualSlot();
+                        $ev = new InventoryTransactionEvent(new InventoryTransaction($who, [new SlotChangeAction($tmp, $adjustedSlot, $action->oldItem, $action->newItem)]));
+                        $ev->call();
+
+                        if($action->windowId === ContainerIds::UI && in_array($action->inventorySlot, $this->getVirtualSlots(), true)){
+                            $tmp->setItem($adjustedSlot, $ev->isCancelled() ? $action->oldItem : $action->newItem);
+                        }else{
+                            $who->getWindow($action->windowId)->setItem($action->inventorySlot, $ev->isCancelled() ? $action->oldItem : $action->newItem);
+                        }
                 }
             }
         }
