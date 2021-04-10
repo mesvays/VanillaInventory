@@ -55,7 +55,7 @@ abstract class FakeInventory extends ContainerInventory{
                             if($ev->isCancelled()){
                                 $tmp->setItem($action->inventorySlot, $action->newItem->getItemStack());
                             }else{
-                                $who->getLevelNonNull()->dropItem($who, $action->newItem->getItemStack());
+                                $who->dropItem($action->newItem->getItemStack());
                             }
                         }
                         break;
