@@ -45,29 +45,30 @@ abstract class FakeInventory extends ContainerInventory{
     public function listen(Player $who, InventoryTransactionPacket $packet) : void{
         $tmp = DataManager::getTemporarilyInventory($who);
         if($tmp instanceof $this){
-            foreach($packet->actions as $action){
+            $transactionData = $packet->trData;
+            foreach($transactionData->getActions() as $action){
                 switch($action->sourceType){
                     case NetworkInventoryAction::SOURCE_WORLD:
                         if($action->windowId === null){
-                            $ev = new PlayerDropItemEvent($who, $action->newItem);
+                            $ev = new PlayerDropItemEvent($who, $action->newItem->getItemStack());
                             $ev->call();
                             if($ev->isCancelled()){
-                                $tmp->setItem($action->inventorySlot, $action->newItem);
+                                $tmp->setItem($action->inventorySlot, $action->newItem->getItemStack());
                             }else{
-                                $who->getLevelNonNull()->dropItem($who, $action->newItem);
+                                $who->getLevelNonNull()->dropItem($who, $action->newItem->getItemStack());
                             }
                         }
                         break;
 
                     case NetworkInventoryAction::SOURCE_CONTAINER:
                         $adjustedSlot = $action->inventorySlot - $this->getFirstVirtualSlot();
-                        $ev = new InventoryTransactionEvent(new InventoryTransaction($who, [new SlotChangeAction($tmp, $adjustedSlot, $action->oldItem, $action->newItem)]));
+                        $ev = new InventoryTransactionEvent(new InventoryTransaction($who, [new SlotChangeAction($tmp, $adjustedSlot, $action->oldItem->getItemStack(), $action->newItem->getItemStack())]));
                         $ev->call();
 
                         if($action->windowId === ContainerIds::UI && in_array($action->inventorySlot, $this->getVirtualSlots(), true)){
-                            $tmp->setItem($adjustedSlot, $ev->isCancelled() ? $action->oldItem : $action->newItem);
+                            $tmp->setItem($adjustedSlot, $ev->isCancelled() ? $action->oldItem->getItemStack() : $action->newItem->getItemStack());
                         }else{
-                            $who->getWindow($action->windowId)->setItem($action->inventorySlot, $ev->isCancelled() ? $action->oldItem : $action->newItem);
+                            $who->getWindow($action->windowId)->setItem($action->inventorySlot, $ev->isCancelled() ? $action->oldItem->getItemStack() : $action->newItem->getItemStack());
                         }
                 }
             }

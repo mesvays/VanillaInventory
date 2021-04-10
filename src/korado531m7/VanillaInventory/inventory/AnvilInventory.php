@@ -45,11 +45,11 @@ class AnvilInventory extends FakeInventory{
 
     public function listen(Player $who, InventoryTransactionPacket $packet) : void{
         if($this->isOutputItem($packet)){
-            foreach($packet->actions as $action){
+            foreach($packet->trData->getActions() as $action){
                 if($action->sourceType === NetworkInventoryAction::SOURCE_CONTAINER && $action->windowId === ContainerIds::INVENTORY){
                     $newName = DataManager::getTemporarilyText($who);
                     if($newName !== null){
-                        $action->newItem->setCustomName($newName);
+                        $action->newItem->getItemStack()->setCustomName($newName);
                         DataManager::resetTemporarilyText($who);
                     }
                 }
@@ -59,9 +59,9 @@ class AnvilInventory extends FakeInventory{
     }
 
     private function isOutputItem(InventoryTransactionPacket $packet) : bool{
-        foreach($packet->actions as $action){
+        foreach($packet->trData->getActions() as $action){
             if($action->sourceType === NetworkInventoryAction::SOURCE_TODO && $action->windowId === -12 && $action->inventorySlot === 2){
-                if($action->oldItem->getNamedTag()->hasTag('RepairCost', IntTag::class) && $action->newItem->isNull()){
+                if($action->oldItem->getItemStack()->getNamedTag()->hasTag('RepairCost', IntTag::class) && $action->newItem->getItemStack()->isNull()){
                     return true;
                 }
             }
@@ -73,6 +73,7 @@ class AnvilInventory extends FakeInventory{
     public static function writeText(Player $player, FilterTextPacket $packet) : void{
         if(DataManager::equalsTemporarilyInventory($player, self::class)){
             DataManager::setTemporarilyText($player, $packet);
+            $player->dataPacket(FilterTextPacket::create($packet->getText(), true));
         }
     }
 }
