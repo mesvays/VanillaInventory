@@ -36,9 +36,13 @@ abstract class FakeInventory extends ContainerInventory{
      */
     abstract public function getVirtualSlots() : array;
 
+    public function open(Player $who) : bool{
+        DataManager::setTemporarilyInventory($who, $this);
+        return parent::open($who);
+    }
+
     public function close(Player $who) : void{
         DataManager::resetTemporarilyData($who);
-
         parent::close($who);
     }
 
@@ -62,7 +66,10 @@ abstract class FakeInventory extends ContainerInventory{
 
                     case NetworkInventoryAction::SOURCE_CONTAINER:
                         $adjustedSlot = $action->inventorySlot - $this->getFirstVirtualSlot();
-                        $ev = new InventoryTransactionEvent(new InventoryTransaction($who, [new SlotChangeAction($tmp, $adjustedSlot, $action->oldItem->getItemStack(), $action->newItem->getItemStack())]));
+                        $ev = new InventoryTransactionEvent(new InventoryTransaction($who, [
+                            new SlotChangeAction($who->getWindow($action->windowId), $action->inventorySlot, $action->oldItem->getItemStack(), $action->newItem->getItemStack()),
+                            new SlotChangeAction($tmp, $adjustedSlot, $action->oldItem->getItemStack(), $action->newItem->getItemStack())
+                        ]));
                         $ev->call();
 
                         if($action->windowId === ContainerIds::UI && in_array($action->inventorySlot, $this->getVirtualSlots(), true)){
