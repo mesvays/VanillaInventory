@@ -13,7 +13,6 @@ namespace korado531m7\VanillaInventory\block;
 
 
 use korado531m7\VanillaInventory\inventory\AnvilInventory;
-use korado531m7\VanillaInventory\DataManager;
 use pocketmine\block\Anvil as BaseAnvil;
 use pocketmine\item\Item;
 use pocketmine\Player;
@@ -21,9 +20,7 @@ use pocketmine\Player;
 class Anvil extends BaseAnvil{
 
     public function onActivate(Item $item, Player $player = null) : bool{
-        $inventory = new AnvilInventory($this);
-        DataManager::setTemporarilyInventory($player, $inventory);
-        $player->addWindow($inventory);
+        $player->addWindow(new AnvilInventory($this));
 
         return true;
     }
